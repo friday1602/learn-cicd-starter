@@ -2,55 +2,47 @@ package auth
 
 import (
 	"net/http"
-	"reflect"
 	"testing"
 )
 
 func TestGetAPIKey(t *testing.T) {
-	header := make(http.Header)
-	key := "GFFqRp+bANBFqGX2aBqhfV+PndbvGZWy0Vge9ozoJyUema4ROEPp2yygbhhcOaFpqM9/iq6dQe3Z3F6QyaGfFw=="
-	header.Add("APIKey", key)
-
 	tests := map[string]struct {
-		input http.Header
-		want  struct {
-			APIKey string
-			err    error
-		}
+		input      func() http.Header
+		wantAPIKey string
+		wantErr    bool
 	}{
-		"simple": {input: header, want: struct {
-			APIKey string
-			err    error
-		}{
-			APIKey: key,
-		}},
-		"no space": {input: header, want: struct {
-			APIKey string
-			err    error
-		}{
-			APIKey: key,
-		}},
-		"more than two parts": {input: header, want: struct {
-			APIKey string
-			err    error
-		}{
-			APIKey: key,
-		}},
+		"simple": {
+			input: func() http.Header {
+				header := make(http.Header)
+				key := "ApiKey GFFqRp+bANBFqGX2aBqhfV+PndbvGZWy0Vge9ozoJyUema4ROEPp2yygbhhcOaFpqM9/iq6dQe3Z3F6QyaGfFw=="
+				header.Add("Authorization", key)
+				return header
+			},
+			wantAPIKey: "GFFqRp+bANBFqGX2aBqhfV+PndbvGZWy0Vge9ozoJyUema4ROEPp2yygbhhcOaFpqM9/iq6dQe3Z3F6QyaGfFw==",
+			wantErr:    false,
+		},
+		"no key": {
+			input: func() http.Header {
+				header := make(http.Header)
+				key := "ApiKey"
+				header.Add("Authorization", key)
+				return header
+			},
+			wantAPIKey: "",
+			wantErr:    true,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			APIKey, err := GetAPIKey(header)
-			got := struct {
-				gotAPIKey string
-				gotErr    error
-			}{
-				gotAPIKey: APIKey,
-				gotErr:    err,
+			APIKey, err := GetAPIKey(tc.input())
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("unexpected error %v", err)
 			}
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("expect: %v, got: %v", tc.want, got)
+			if APIKey != tc.wantAPIKey {
+				t.Fatalf("want: %v got: %v", tc.wantAPIKey, APIKey)
 			}
+
 		})
 	}
 
