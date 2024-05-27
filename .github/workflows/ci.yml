@@ -27,6 +27,9 @@ jobs:
       - name: gosec
         run: gosec ./...
 
+      - name: db url get
+        run: echo "DB_URL=${{ secrets.DATABASE_URL }}"
+
 
   style:
     name: Style
